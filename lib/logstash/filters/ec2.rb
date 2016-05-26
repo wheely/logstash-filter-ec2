@@ -48,6 +48,9 @@ class LogStash::Filters::Ec2 < LogStash::Filters::Base
       ::Aws.const_set(:JRUBY_ISSUE_3646, true)
     end
 
+    # Aws SDK issue: https://github.com/aws/aws-sdk-ruby/issues/1135
+    Aws::Xml::Parser.engine
+
     @hit_cache    = ::LruRedux::ThreadSafeCache.new(@hit_cache_size, @hit_cache_ttl)
     @failed_cache = ::LruRedux::ThreadSafeCache.new(@failed_cache_size, @failed_cache_ttl)
 
@@ -88,13 +91,13 @@ class LogStash::Filters::Ec2 < LogStash::Filters::Base
     instance || instance_not_found(query)
 
     info     = {
-      :id                => instance.instance_id,
-      :image             => instance.image_id,
-      :instance_type     => instance.instance_type,
-      :availability_zone => instance.placement.availability_zone,
-      :security_groups   => instance.security_groups.map(&:group_id)
+      "id"                => instance.instance_id,
+      "image"             => instance.image_id,
+      "instance_type"     => instance.instance_type,
+      "availability_zone" => instance.placement.availability_zone,
+      "security_groups"   => instance.security_groups.map(&:group_id)
     }
-    tags = instance.tags.inject({}){|memo, t| memo.merge(t.key.downcase.to_sym => t.value) }
+    tags = instance.tags.inject({}){|memo, t| memo.merge(t.key.downcase => t.value) }
     info.merge!(tags)
   end
 
