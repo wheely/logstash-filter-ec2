@@ -67,14 +67,14 @@ class LogStash::Filters::Ec2 < LogStash::Filters::Base
   private
 
   def resolve(event)
-    ip = event[@source]
+    ip = event.get(@source)
 
     begin
       return if ip.nil?
       return if @failed_cache[ip]
 
       info = @hit_cache.getset(ip) { retriable_get_instance(ip) }
-      event[@target] = info
+      event.set(@target, info)
     rescue InstanceNotFoundError, Aws::EC2::Errors::ServiceError, Timeout::Error => e
       @failed_cache[ip] = true
       @logger.info("EC2: #{e.class} - #{e.message}", :field => @source, :value => ip)
